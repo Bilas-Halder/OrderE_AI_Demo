@@ -1,6 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { foods } from "@/data/foods";
+import toast from "react-hot-toast";
 
 export type IntentLog = {
   id: string;
@@ -11,12 +12,21 @@ export type IntentLog = {
   timestamp: number;
 };
 
+export interface CartItem {
+  id: number;
+  name: string;
+  price: number;
+  description: string;
+  quantity: number;
+}
+
 interface AppState {
-  cart: typeof foods;
+  cart: CartItem[];
   orders: any[];
   aiLogs: IntentLog[];
   addToCart: (id: number) => void;
   removeFromCart: (id: number) => void;
+  decrementFromCart: (id: number) => void;
   clearCart: () => void;
   placeOrder: (details: any) => void;
   addLog: (log: Omit<IntentLog, "id" | "timestamp">) => void;
@@ -26,7 +36,7 @@ interface AppState {
 const GlobalContext = createContext<AppState | null>(null);
 
 export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
-  const [cart, setCart] = useState<typeof foods>([]);
+  const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [aiLogs, setAiLogs] = useState<IntentLog[]>([]);
 
@@ -47,18 +57,44 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
 
   const addToCart = (id: number) => {
     const food = foods.find(f => f.id === id);
-    if (food) setCart(prev => [...prev, food]);
+    if (!food) return;
+
+    setCart(prev => {
+      const existingItem = prev.find(item => item.id === id);
+      if (existingItem) {
+        return prev.map(item => item.id === id ? { ...item, quantity: item.quantity + 1 } : item);
+      }
+      return [...prev, { ...food, quantity: 1 }];
+    });
+    toast.success(`${food.name} added!`);
+  };
+
+  const decrementFromCart = (id: number) => {
+    setCart(prev => {
+      const existingItem = prev.find(item => item.id === id);
+      if (existingItem && existingItem.quantity > 1) {
+        return prev.map(item => item.id === id ? { ...item, quantity: item.quantity - 1 } : item);
+      }
+      return prev.filter(item => item.id !== id);
+    });
+
+    toast.error("Item removed from cart");
   };
 
   const removeFromCart = (id: number) => {
     setCart(prev => prev.filter(item => item.id !== id));
+    toast.error("Item removed from cart");
   };
 
-  const clearCart = () => setCart([]);
-  
+  const clearCart = () => {
+    setCart([]);
+    toast.success("Cart cleared");
+  };
+
   const placeOrder = (details: any) => {
     setOrders(prev => [...prev, { id: Date.now(), items: cart, details }]);
-    clearCart();
+    setCart([]);
+    toast.success("Purchase completed successfully! 🎉");
   };
 
   const addLog = (log: Omit<IntentLog, "id" | "timestamp">) => {
@@ -70,7 +106,7 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <GlobalContext.Provider value={{ cart, orders, aiLogs, addToCart, removeFromCart, clearCart, placeOrder, addLog, toggleLogCorrectness }}>
+    <GlobalContext.Provider value={{ cart, orders, aiLogs, addToCart, decrementFromCart, removeFromCart, clearCart, placeOrder, addLog, toggleLogCorrectness }}>
       {children}
     </GlobalContext.Provider>
   );
@@ -81,3 +117,5 @@ export const useAppStore = () => {
   if (!context) throw new Error("useAppStore must be used within GlobalProvider");
   return context;
 };
+
+

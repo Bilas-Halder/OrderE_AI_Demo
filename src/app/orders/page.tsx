@@ -14,23 +14,18 @@ export default function OrdersPage() {
         </div>
       ) : (
         <div className="space-y-6">
+          {/* Inside orders.map... Replace orderTotal and item mapping with this: */}
           {orders.map((order) => {
-            const orderTotal = order.items.reduce((sum: number, item: any) => sum + item.price, 0);
+            const orderTotal = order.items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
             return (
               <div key={order.id} className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-                <div className="flex justify-between items-start mb-4 border-b border-gray-800 pb-4">
-                  <div>
-                    <p className="text-sm text-gray-400">Order ID: {order.id}</p>
-                    <p className="font-medium text-white">Deliver to: {order.details.name} ({order.details.address})</p>
-                  </div>
-                  <span className="text-green-400 font-bold text-lg">${orderTotal.toFixed(2)}</span>
-                </div>
+                {/* ... keep the order header ... */}
                 
                 <div className="space-y-2">
                   {order.items.map((item: any, i: number) => (
                     <div key={i} className="flex justify-between text-sm">
-                      <span className="text-gray-300">{item.name}</span>
-                      <span className="text-gray-500">${item.price.toFixed(2)}</span>
+                      <span className="text-gray-300">{item.quantity}x {item.name}</span>
+                      <span className="text-gray-500">${(item.price * item.quantity).toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
