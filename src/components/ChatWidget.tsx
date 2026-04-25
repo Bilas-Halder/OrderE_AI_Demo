@@ -3,17 +3,22 @@ import React, { useState, useEffect, useRef } from "react";
 import { Mic, MicOff, Send, X, MessageSquare } from "lucide-react";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useIntentExecutor } from "@/hooks/useIntentExecutor";
+import toast from "react-hot-toast";
+import { ToggleLeft, ToggleRight } from "lucide-react";
 
 type Message = { role: "user" | "ai"; text: string };
 
 export const ChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputText, setInputText] = useState("");
+  const [isAlwaysOn, setIsAlwaysOn] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     { role: "ai", text: "Hi! Try saying: 'Add burger to cart and checkout.'" }
   ]);
+
   
-  const { isListening, transcript, startListening } = useSpeechRecognition();
+  const { isListening, transcript, startListening, stopListening, setTranscript } = useSpeechRecognition(isAlwaysOn);
+  const silenceTimer = useRef<NodeJS.Timeout | null>(null);
   const { execute } = useIntentExecutor();
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -37,25 +42,52 @@ export const ChatWidget = () => {
   const handleSend = async (textToProcess: string = inputText) => {
     if (!textToProcess.trim()) return;
     
-    // Add User message to chat
     setMessages(prev => [...prev, { role: "user", text: textToProcess }]);
     setInputText(""); 
 
-    // Execute intent
     const parsedJSON = await execute(textToProcess);
 
-    // Formulate basic AI response based on execution
-    let aiReply = "Action completed!";
-    if (!parsedJSON || !parsedJSON.intents || parsedJSON.intents[0]?.action === "unknown") {
-       aiReply = "I'm sorry, I didn't quite catch that. Could you rephrase?";
-    } else {
-       const actions = parsedJSON.intents.map((i: any) => i.action.replace(/_/g, ' ')).join(" & ");
-       aiReply = `Executing: ${actions}`;
-    }
-
-    // Add AI response to chat
+    // Use the reply_message from Gemini (Step 1), or fallback to a default
+    const aiReply = parsedJSON?.reply_message || "Action completed!";
+    // if (!parsedJSON || !parsedJSON.intents || parsedJSON.intents[0]?.action === "unknown") {
+    //   aiReply = "I'm sorry, I didn't quite catch that. Could you rephrase?";
+    // } else {
+    //    const actions = parsedJSON.intents.map((i: any) => i.action.replace(/_/g, ' ')).join(" & ");
+    //   aiReply = `Executing: ${actions}`;
+    // }
     setMessages(prev => [...prev, { role: "ai", text: aiReply }]);
   };
+
+
+  const handleToggleMode = () => {
+    const newMode = !isAlwaysOn;
+    setIsAlwaysOn(newMode);
+    
+    if (newMode) {
+      toast.success("Always-On Listening Enabled");
+      startListening();
+    } else {
+      toast.success("Chat Mode Enabled");
+      stopListening();
+    }
+  };
+
+  // Silence Timer - ONLY triggers in Always-On mode
+  useEffect(() => {
+    if (isAlwaysOn && transcript) {
+      if (silenceTimer.current) clearTimeout(silenceTimer.current);
+
+      silenceTimer.current = setTimeout(() => {
+        if (transcript.trim().length > 0) {
+          handleSend(transcript);
+          setTranscript(""); 
+        }
+      }, 1500); // 1 seconds pause triggers send
+    }
+    return () => {
+      if (silenceTimer.current) clearTimeout(silenceTimer.current);
+    };
+  }, [transcript, isAlwaysOn]);
 
   if (!isOpen) {
     return (
@@ -68,7 +100,12 @@ export const ChatWidget = () => {
   return (
     <div className="fixed bottom-6 right-6 w-80 bg-gray-800 rounded-2xl shadow-2xl border border-gray-700 overflow-hidden flex flex-col z-50">
       <div className="bg-gray-900 p-4 flex justify-between items-center border-b border-gray-700">
-        <h3 className="font-semibold text-white">AI Assistant</h3>
+        <h3 className="font-semibold text-white flex items-center gap-2">
+          AI Assistant
+          <button onClick={handleToggleMode} className="ml-2 text-blue-400 hover:text-blue-300" title="Toggle Always-On Mode">
+            {isAlwaysOn ? <ToggleRight className="w-5 h-5 text-green-400" /> : <ToggleLeft className="w-5 h-5 text-gray-400" />}
+          </button>
+        </h3>
         <button onClick={() => setIsOpen(false)}><X className="w-5 h-5 text-gray-400 hover:text-white" /></button>
       </div>
       
@@ -94,8 +131,11 @@ export const ChatWidget = () => {
 
       <div className="p-3 bg-gray-900 flex items-center gap-2 border-t border-gray-700">
         <button 
-          onClick={startListening} 
-          className={`p-2 rounded-full transition-colors ${isListening ? 'bg-red-500 animate-pulse' : 'bg-gray-700 hover:bg-gray-600'}`}
+          onClick={isListening ? stopListening : startListening} 
+          disabled={isAlwaysOn} // Disable manual mic clicks if Always-On is active
+          className={`p-2 rounded-full transition-colors ${
+            isListening ? 'bg-red-500 animate-pulse' : 'bg-gray-700 hover:bg-gray-600'
+          } ${isAlwaysOn ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           {isListening ? <MicOff className="w-5 h-5 text-white" /> : <Mic className="w-5 h-5 text-gray-300" />}
         </button>

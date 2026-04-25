@@ -27,5 +27,8 @@ export const parseIntentWithGemini = async (transcript: string) => {
   // Simulating network delay
   await new Promise(resolve => setTimeout(resolve, 800));
   
-  return { intents };
+  return { 
+  reply_message: "I've added the burger to your cart. Do you want anything else?",
+  intents 
+};
 };
