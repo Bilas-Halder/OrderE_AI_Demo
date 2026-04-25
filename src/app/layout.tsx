@@ -7,7 +7,7 @@ import Link from 'next/link';
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="bg-gray-950 text-gray-100 min-h-screen flex flex-col">
+      <body className="bg-gray-950 text-gray-100 min-h-screen flex flex-col" suppressHydrationWarning={true}>
         <Toaster position="top-center" toastOptions={{ style: { background: '#333', color: '#fff' } }} />
         <GlobalProvider>
           <nav className="p-4 bg-gray-900 border-b border-gray-800 flex gap-6 px-8">
