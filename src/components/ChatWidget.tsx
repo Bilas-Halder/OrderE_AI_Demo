@@ -30,7 +30,7 @@ export const ChatWidget = () => {
   // Silence Timer
   useEffect(() => {
     if (transcript.trim() && !isProcessingRef.current) {
-      console.log("[Timer] Speech detected, resetting 2.5s silence timer...");
+      console.log("[Timer] Speech detected, resetting 1.5s silence timer...");
       if (silenceTimer.current) clearTimeout(silenceTimer.current);
 
       // Wait 1.5 seconds after the user STOPS talking
@@ -54,6 +54,8 @@ export const ChatWidget = () => {
     console.log("[HandleSend] Sending to LLM:", textToProcess);
     isProcessingRef.current = true; // Lock LLM requests
     
+    const currentHistory = messages.filter(m => m.text !== "Hi! Try saying: 'Add burger to cart and checkout.'");
+
     // Add User message to chat
     setMessages(prev => [...prev, { role: "user", text: textToProcess }]);
     setInputText(""); 
@@ -62,7 +64,7 @@ export const ChatWidget = () => {
     flushBuffer();
 
     // Execute intent
-    const parsedJSON = await execute(textToProcess, mode);
+    const parsedJSON = await execute(textToProcess, mode, currentHistory);
     console.log("[HandleSend] Received from LLM:", parsedJSON);
 
     const aiReply = parsedJSON?.reply_message || "Action completed!";

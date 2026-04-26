@@ -1,8 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAppStore } from "@/context/GlobalContext";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function BuyPage() {
   const { cart, addToCart, decrementFromCart, removeFromCart, placeOrder, clearCart } = useAppStore();
@@ -12,11 +13,33 @@ export default function BuyPage() {
 
   const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-  const handleConfirmPurchase = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (cart.length === 0) return alert("Cart is empty!");
-    placeOrder(formData);
-    router.push('/orders');
+  // Local state for the form
+  const [localName, setLocalName] = useState(formData.name || "");
+  const [localAddress, setLocalAddress] = useState(formData.address || "");
+  const [localAge, setLocalAge] = useState(formData.age || "");
+
+  useEffect(() => {
+    if (formData.name) setLocalName(formData.name);
+    if (formData.address) setLocalAddress(formData.address);
+    if (formData.age) setLocalAge(formData.age);
+  }, [formData]);
+
+  const handleConfirmPurchase = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (cart.length === 0) {
+      toast.error("Cart is empty!");
+      return;
+    }
+    const currentDetails = { 
+      name: localName, 
+      age: localAge,
+      address: localAddress 
+    };
+    setFormData(currentDetails);
+    const success = placeOrder(currentDetails, cart);
+    if (success) {
+      router.push('/orders?newOrder=true');
+    }
   };
 
   const handleClearForm = () => {
@@ -84,34 +107,33 @@ export default function BuyPage() {
         <h2 className="text-2xl font-bold text-white">Checkout Details</h2>
         <form onSubmit={handleConfirmPurchase} className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">Name</label>
-            <input 
-              type="text" 
-              value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
-              className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
-              required
-            />
-          </div>
+          <label className="text-gray-300">Name</label>
+          <input 
+            type="text" 
+            value={localName} 
+            onChange={(e) => setLocalName(e.target.value)} 
+            className="w-full bg-gray-800 text-white p-2 rounded" 
+          />
+        </div>
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-1">Age</label>
             <input 
               type="number" 
-              value={formData.age}
-              onChange={(e) => setFormData({...formData, age: e.target.value})}
+            value={localAge} 
+            onChange={(e) => setLocalAge(e.target.value)} 
               className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">Address</label>
-            <textarea 
-              value={formData.address}
-              onChange={(e) => setFormData({...formData, address: e.target.value})}
-              className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
-              required
-            />
-          </div>
+          <label className="text-gray-300">Address</label>
+          <input 
+            type="text" 
+            value={localAddress} 
+            onChange={(e) => setLocalAddress(e.target.value)} 
+            className="w-full bg-gray-800 text-white p-2 rounded" 
+          />
+        </div>
           
           <div className="flex gap-3 pt-4">
             <button 

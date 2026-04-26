@@ -19,16 +19,23 @@ export interface CartItem {
   description: string;
   quantity: number;
 }
+export type UserFormData = {
+  name: string;
+  phone: string;
+  address: string;
+};
 
 interface AppState {
   cart: CartItem[];
   orders: any[];
   aiLogs: IntentLog[];
+  formData: UserFormData;
   addToCart: (id: number) => void;
   removeFromCart: (id: number) => void;
   decrementFromCart: (id: number) => void;
   clearCart: () => void;
-  placeOrder: (details: any) => void;
+  placeOrder: (details?: any, cart?: any[]) => boolean
+  setFormData: (data: Partial<UserFormData>) => void;
   addLog: (log: Omit<IntentLog, "id" | "timestamp">) => void;
   toggleLogCorrectness: (id: string, isCorrect: boolean) => void;
 }
@@ -55,18 +62,23 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => localStorage.setItem("orders", JSON.stringify(orders)), [orders]);
   useEffect(() => localStorage.setItem("aiLogs", JSON.stringify(aiLogs)), [aiLogs]);
 
-  const addToCart = (id: number) => {
-    const food = foods.find(f => f.id === id);
-    if (!food) return;
+  const addToCart = (itemId: number) => {
+    const itemToAdd = foods.find(f => f.id === itemId);
+    if (!itemToAdd) return;
 
-    setCart(prev => {
-      const existingItem = prev.find(item => item.id === id);
+    // VERY IMPORTANT: Use the functional update (prev => ...)
+    setCart(prevCart => {
+      const existingItem = prevCart.find(i => i.id === itemId);
       if (existingItem) {
-        return prev.map(item => item.id === id ? { ...item, quantity: item.quantity + 1 } : item);
+        // If it exists, increase quantity
+        return prevCart.map(i => 
+          i.id === itemId ? { ...i, quantity: (i.quantity || 1) + 1 } : i
+        );
+      } else {
+        // If it's new, add it to the previous state
+        return [...prevCart, { ...itemToAdd, quantity: 1 }];
       }
-      return [...prev, { ...food, quantity: 1 }];
     });
-    toast.success(`${food.name} added!`);
   };
 
   const decrementFromCart = (id: number) => {
@@ -91,10 +103,37 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
     toast.success("Cart cleared");
   };
 
-  const placeOrder = (details: any) => {
-    setOrders(prev => [...prev, { id: Date.now(), items: cart, details }]);
-    setCart([]);
-    toast.success("Purchase completed successfully! 🎉");
+ // Accept both override details AND an override cart
+  const placeOrder = (overrideDetails?: any, overrideCart?: any[]) : boolean => {
+    // Grab the exact data passed in, or fallback to state
+    const finalDetails = overrideDetails || formData;
+    const finalCart = overrideCart || cart; 
+
+    if (finalCart.length === 0) {
+      toast.error("Cart is empty!");
+      return false;
+    }
+    
+    if (!finalDetails.name || !finalDetails.address) {
+      toast.error("Missing name or address for delivery!");
+      return false;
+    }
+
+    // Save exactly what we calculated
+    setOrders(prev => [...prev, { 
+      id: Date.now(), 
+      items: finalCart, 
+      details: finalDetails 
+    }]);
+    
+    setCart([]); // Clear cart instantly
+    return true;
+  };
+
+  const [formData, setFormDataState] = useState<UserFormData>({ name: '', phone: '', address: '' });
+
+  const setFormData = (data: Partial<UserFormData>) => {
+    setFormDataState(prev => ({ ...prev, ...data }));
   };
 
   const addLog = (log: Omit<IntentLog, "id" | "timestamp">) => {
@@ -106,7 +145,7 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <GlobalContext.Provider value={{ cart, orders, aiLogs, addToCart, decrementFromCart, removeFromCart, clearCart, placeOrder, addLog, toggleLogCorrectness }}>
+    <GlobalContext.Provider value={{ cart, orders, aiLogs,formData, addToCart, decrementFromCart, removeFromCart, clearCart, placeOrder, setFormData, addLog, toggleLogCorrectness }}>
       {children}
     </GlobalContext.Provider>
   );
