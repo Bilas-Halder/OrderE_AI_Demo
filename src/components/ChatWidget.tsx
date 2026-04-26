@@ -62,7 +62,7 @@ export const ChatWidget = () => {
     flushBuffer();
 
     // Execute intent
-    const parsedJSON = await execute(textToProcess);
+    const parsedJSON = await execute(textToProcess, mode);
     console.log("[HandleSend] Received from LLM:", parsedJSON);
 
     const aiReply = parsedJSON?.reply_message || "Action completed!";

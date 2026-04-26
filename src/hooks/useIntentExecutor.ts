@@ -1,50 +1,45 @@
-import { useRouter } from "next/navigation";
 import { useAppStore } from "@/context/GlobalContext";
-import { parseIntentWithGemini } from "@/utils/geminiApi";
+import { useRouter } from "next/navigation";
+import { fetchAIIntent } from "@/utils/geminiApi";
 
 export const useIntentExecutor = () => {
+  const { addToCart, removeFromCart, placeOrder, clearCart } = useAppStore();
   const router = useRouter();
-  const { addToCart, removeFromCart, clearCart, placeOrder, addLog } = useAppStore();
 
-  const execute = async (transcript: string) => {
+  const execute = async (text: string, mode: 'ambient' | 'helping') => {
     try {
-      const parsedJSON = await parseIntentWithGemini(transcript);
-      let success = true;
-
-      parsedJSON.intents.forEach((intent: any) => {
-        switch (intent.action) {
-          case "navigate":
-            if (intent.target_page) router.push(`/${intent.target_page === 'home' ? '' : intent.target_page}`);
-            break;
-          case "add_to_cart":
-            if (intent.food_id) addToCart(intent.food_id);
-            break;
-          case "buy_now":
-            if (intent.food_id) {
-              addToCart(intent.food_id);
+      const parsedJSON = await fetchAIIntent(text, mode);
+      
+      if (parsedJSON.intents && Array.isArray(parsedJSON.intents)) {
+        parsedJSON.intents.forEach((intent: any) => {
+          switch (intent.action) {
+            case "navigate":
+              router.push(intent.route);
+              break;
+            case "add_to_cart":
+              addToCart(intent.item_id);
+              break;
+            case "remove_from_cart":
+              removeFromCart(intent.item_id);
+              break;
+            case "clear_cart":
+              clearCart();
+              break;
+            case "checkout":
               router.push('/buy');
-            }
-            break;
-          case "remove_from_cart":
-            if (intent.food_id) removeFromCart(intent.food_id);
-            break;
-          case "clear_form": 
-            clearCart();
-            break;
-          case "confirm_purchase":
-            placeOrder(intent.form_data || { note: "Voice ordered" });
-            router.push('/orders');
-            break;
-          case "unknown":
-            success = false;
-            break;
-        }
-      });
-
-      addLog({ transcript, parsedJSON, success, isCorrect: null });
+              break;
+            case "fill_form":
+              console.log("Fill form intent received:", intent.details);
+              break;
+            default:
+              console.log("Unknown intent:", intent);
+          }
+        });
+      }
       return parsedJSON;
     } catch (error) {
-      addLog({ transcript, parsedJSON: { error: "Failed to parse" }, success: false, isCorrect: false });
+      console.error("Failed to execute intent:", error);
+      return null;
     }
   };
 
