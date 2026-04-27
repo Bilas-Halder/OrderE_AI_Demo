@@ -21,7 +21,7 @@ export default function HomePage() {
         </Link>
         <div className="px-6 py-3 bg-gray-800 border border-gray-700 text-gray-300 rounded-lg flex items-center gap-2">
           <Mic className="w-5 h-5 text-blue-400" />
-          Say "Show me the menu"
+          Say "Show me the menu" in chat.
         </div>
       </div>
     </div>

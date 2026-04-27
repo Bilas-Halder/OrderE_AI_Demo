@@ -21,7 +21,7 @@ export interface CartItem {
 }
 export type UserFormData = {
   name: string;
-  phone: string;
+  age: string;
   address: string;
 };
 
@@ -65,8 +65,6 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   const addToCart = (itemId: number) => {
     const itemToAdd = foods.find(f => f.id === itemId);
     if (!itemToAdd) return;
-
-    // VERY IMPORTANT: Use the functional update (prev => ...)
     setCart(prevCart => {
       const existingItem = prevCart.find(i => i.id === itemId);
       if (existingItem) {
@@ -119,20 +117,20 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
       return false;
     }
 
-    // Save exactly what we calculated
     setOrders(prev => [...prev, { 
       id: Date.now(), 
       items: finalCart, 
       details: finalDetails 
     }]);
     
-    setCart([]); // Clear cart instantly
+    setCart([]); 
     return true;
   };
 
-  const [formData, setFormDataState] = useState<UserFormData>({ name: '', phone: '', address: '' });
+  const [formData, setFormDataState] = useState<UserFormData>({ name: '', age: "", address: '' });
 
   const setFormData = (data: Partial<UserFormData>) => {
+    console.log(data)
     setFormDataState(prev => ({ ...prev, ...data }));
   };
 

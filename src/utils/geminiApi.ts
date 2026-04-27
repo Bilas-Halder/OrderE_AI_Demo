@@ -9,17 +9,33 @@ const minifiedMenu = foods.map(f => ({ id: f.id, name: f.name, price: f.price })
 const menuString = JSON.stringify(minifiedMenu);
 
 const AMBIENT_PROMPT = `
-You are an intent parser. Your ONLY job is to translate commands into strict JSON actions.
+You are an intelligent intent parser for a web application. 
+Extract the user's intent(s) from the following transcript and return ONLY a valid JSON object. 
+Do not include markdown blocks like \`\`\`json.
+Available Routes: "/"(home), "foods", "buy", "orders", "dashboard"              
 Menu: ${menuString}
-Available Routes: "home", "foods", "buy", "orders", "dashboard"
-AVAILABLE ACTIONS: "navigate" (route), "add_to_cart" (item_id), "remove_from_cart" (item_id), "clear_cart", "checkout".
-OUTPUT FORMAT: { "reply_message": "...", "intents": [ { "action": "...", ... } ] }
+
+AVAILABLE ACTIONS:
+Navigate: { "action": "navigate", "route": string }
+Scroll : {"action" : "scroll", "isdown" : bool}
+Add to Cart: { "action": "add_to_cart", "item_id": number }
+Remove from Cart: { "action": "remove_from_cart", "item_id": number }
+Clear Cart: { "action": "clear_cart" }
+Fill Form: { "action": "fill_form", "details": { "name": string, "age": string, "address": string } }
+Clear Form: { "action": "clear_form" }
+Place Order: { "action": "place_order" }
+
+OUTPUT FORMAT (Strict JSON):
+{
+  "reply_message": "Your short conversational response.",
+  "intents": [ ...actions if confirmed, or empty array [] ]
+}
 `;
 
 const HELPING_PROMPT = `
 You are a professional, friendly waiter for our restaurant. 
 Menu: ${menuString}
-Available Routes: "home", "foods", "buy", "orders", "dashboard"
+Available Routes: "/"(home), "foods", "buy", "orders", "dashboard"
 
 YOUR GOAL:
 1. Greet the user, suggest items based on their preferences, and answer questions about the menu in short.
@@ -47,7 +63,6 @@ OUTPUT FORMAT (Strict JSON):
 export const fetchAIIntent = async (
   userText: string, 
   mode: 'ambient' | 'helping',
-  // Accepting the history array from the frontend
   frontendHistory: { role: string, text: string }[] = [] 
 ) => {
   console.log(`[AI Engine] Sending to Gemini in ${mode} mode.`);
@@ -56,36 +71,35 @@ export const fetchAIIntent = async (
     const systemInstruction = mode === 'ambient' ? AMBIENT_PROMPT : HELPING_PROMPT;
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-3.1-flash-lite-preview",
+      model: "gemini-2.5-flash",
       systemInstruction: systemInstruction,
       generationConfig: {
         responseMimeType: "application/json",
       }
     });
-
-    // Formating the frontend history into Gemini's expected format
     const formattedHistory = frontendHistory.map(msg => ({
       role: msg.role === 'ai' ? 'model' : 'user',
       parts: [{ text: msg.text }]
     }));
 
-    // Starting a chat session with the history context
     const chat = model.startChat({
       history: formattedHistory
     });
 
-    // New message
     const result = await chat.sendMessage(userText);
     const responseText = result.response.text();
     
     console.log("[AI Engine] Gemini Response:", responseText);
     return JSON.parse(responseText);
 
-  } catch (error) {
-    console.error("[AI Engine] Gemini API Error:", error);
+  } catch (error: any) {
+    const status = error.status || "Unknown";
+    const statusText = error.statusText || "Error";
+    const msg = `[Gemini Error] ${status} - ${statusText}. Please try again.`
+    throw error
     return { 
-      reply_message: "I'm having trouble connecting right now. Please try again.", 
+      reply_message: msg, 
       intents: [] 
     };
-  }
+}
 };

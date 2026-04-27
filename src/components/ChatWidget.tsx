@@ -67,7 +67,7 @@ export const ChatWidget = () => {
     const parsedJSON = await execute(textToProcess, mode, currentHistory);
     console.log("[HandleSend] Received from LLM:", parsedJSON);
 
-    const aiReply = parsedJSON?.reply_message || "Action completed!";
+    const aiReply = parsedJSON?.reply_message || "Action isn't completed!";
     setMessages(prev => [...prev, { role: "ai", text: aiReply }]);
     
     // Unlock LLM requests

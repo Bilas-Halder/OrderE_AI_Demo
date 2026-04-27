@@ -6,10 +6,10 @@ import { Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function BuyPage() {
-  const { cart, addToCart, decrementFromCart, removeFromCart, placeOrder, clearCart } = useAppStore();
+  const { cart, formData, setFormData, addToCart, decrementFromCart, removeFromCart, placeOrder, clearCart } = useAppStore();
   const router = useRouter();
 
-  const [formData, setFormData] = useState({ name: "", age: "", address: "" });
+  // const [formData, setFormData] = useState({ name: "", age: "", address: "" });
 
   const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
@@ -22,6 +22,8 @@ export default function BuyPage() {
     if (formData.name) setLocalName(formData.name);
     if (formData.address) setLocalAddress(formData.address);
     if (formData.age) setLocalAge(formData.age);
+    console.log(localName, localAddress, localAge);
+    
   }, [formData]);
 
   const handleConfirmPurchase = (e: React.FormEvent) => {
@@ -44,7 +46,9 @@ export default function BuyPage() {
 
   const handleClearForm = () => {
     setFormData({ name: "", age: "", address: "" });
-    clearCart();
+    setLocalName("")
+    setLocalAddress("")
+    setLocalAge("")
   };
 
   return (
@@ -138,7 +142,7 @@ export default function BuyPage() {
           <div className="flex gap-3 pt-4">
             <button 
               type="button"
-              onClick={() => setFormData({ name: "", age: "", address: "" })}
+              onClick={handleClearForm}
               className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors"
             >
               Clear Form
