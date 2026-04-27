@@ -65,6 +65,7 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   const addToCart = (itemId: number) => {
     const itemToAdd = foods.find(f => f.id === itemId);
     if (!itemToAdd) return;
+    toast.success(`${itemToAdd.name} added to cart!`)
     setCart(prevCart => {
       const existingItem = prevCart.find(i => i.id === itemId);
       if (existingItem) {
@@ -122,7 +123,7 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
       items: finalCart, 
       details: finalDetails 
     }]);
-    
+    toast.success("Your order is placed!");
     setCart([]); 
     return true;
   };
