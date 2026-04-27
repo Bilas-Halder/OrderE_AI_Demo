@@ -1,5 +1,6 @@
 # OrdereAI: Voice-First Commerce Engine
-**Live Application:** [ordereai.netlify.app](https://ordereai.netlify.app)
+**Live Application:** [ordereai.netlify.app](https://ordereai.netlify.app) <br>
+**Go Through Video:** [Youtube-Video](https://www.youtube.com/watch?v=bdI00-Af_CE)
 
 > **Architectural Vision:** A zero-latency, voice-integrated commerce platform built on React 19, designed to bridge the gap between non-deterministic natural language and deterministic DOM state.
 

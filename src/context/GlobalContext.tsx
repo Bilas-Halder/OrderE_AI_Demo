@@ -30,6 +30,7 @@ interface AppState {
   orders: any[];
   aiLogs: IntentLog[];
   formData: UserFormData;
+  isThinking: boolean;
   addToCart: (id: number) => void;
   removeFromCart: (id: number) => void;
   decrementFromCart: (id: number) => void;
@@ -38,6 +39,7 @@ interface AppState {
   setFormData: (data: Partial<UserFormData>) => void;
   addLog: (log: Omit<IntentLog, "id" | "timestamp">) => void;
   toggleLogCorrectness: (id: string, isCorrect: boolean) => void;
+  setIsThinking: (status: boolean) => void;
 }
 
 const GlobalContext = createContext<AppState | null>(null);
@@ -46,6 +48,7 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [aiLogs, setAiLogs] = useState<IntentLog[]>([]);
+  const [isThinking, setIsThinking] = useState<boolean>(false);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -143,8 +146,10 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
     setAiLogs(prev => prev.map(log => log.id === id ? { ...log, isCorrect } : log));
   };
 
+  
+
   return (
-    <GlobalContext.Provider value={{ cart, orders, aiLogs,formData, addToCart, decrementFromCart, removeFromCart, clearCart, placeOrder, setFormData, addLog, toggleLogCorrectness }}>
+    <GlobalContext.Provider value={{ cart, orders, aiLogs,formData, isThinking, addToCart, decrementFromCart, removeFromCart, clearCart, placeOrder, setFormData, addLog, toggleLogCorrectness, setIsThinking }}>
       {children}
     </GlobalContext.Provider>
   );

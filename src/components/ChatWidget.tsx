@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Mic, MicOff, Send, X, MessageSquare, ToggleLeft, ToggleRight } from "lucide-react";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useIntentExecutor } from "@/hooks/useIntentExecutor";
+import { useAppStore } from "@/context/GlobalContext";
 import toast from "react-hot-toast";
 
 type Message = { role: "user" | "ai"; text: string };
@@ -18,6 +19,7 @@ export const ChatWidget = () => {
   
   const { isListening, transcript, startListening, stopListening, flushBuffer } = useSpeechRecognition(mode);
   const { execute } = useIntentExecutor();
+  const { isThinking } = useAppStore();
   const chatEndRef = useRef<HTMLDivElement>(null);
   const silenceTimer = useRef<NodeJS.Timeout | null>(null);
   const isProcessingRef = useRef(false); // Prevents multiple rapid-fire sends
@@ -135,6 +137,11 @@ export const ChatWidget = () => {
         {isListening && transcript && (
           <div className="max-w-[85%] p-3 rounded-xl text-sm bg-blue-600/50 text-blue-100 self-end rounded-br-none animate-pulse">
             {transcript}...
+          </div>
+        )}
+        {isThinking && (
+          <div className="max-w-[85%] py-2 px-3 rounded-xl bg-gray-700 text-gray-200 self-start rounded-bl-none animate-pulse">
+            Thinking...
           </div>
         )}
         <div ref={chatEndRef} />

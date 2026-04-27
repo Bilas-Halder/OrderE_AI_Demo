@@ -5,10 +5,11 @@ import { fetchAIIntent } from "@/utils/geminiApi";
 import { foods } from "@/data/foods";
 import toast from "react-hot-toast";
 export const useIntentExecutor = () => {
-  const { cart, formData, addToCart, removeFromCart, clearCart, setFormData, placeOrder, addLog } = useAppStore();
+  const { cart, formData, addToCart, removeFromCart, clearCart, setFormData, placeOrder, addLog, setIsThinking } = useAppStore();
   const router = useRouter();
 
   const execute = async (text: string, mode: 'ambient' | 'helping', history: any[]) => {
+    setIsThinking(true);
     try {
       const parsedJSON = await fetchAIIntent(text, mode, history);
       if (!parsedJSON?.intents) return parsedJSON;
@@ -106,6 +107,9 @@ export const useIntentExecutor = () => {
       }
       
       return null;
+    }
+    finally{
+      setIsThinking(false);
     }
   };
 
