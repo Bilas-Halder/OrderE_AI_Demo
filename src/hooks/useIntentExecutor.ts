@@ -1,9 +1,9 @@
+'use client';
 import { useAppStore } from "@/context/GlobalContext";
 import { useRouter } from "next/navigation";
 import { fetchAIIntent } from "@/utils/geminiApi";
 import { foods } from "@/data/foods";
 import toast from "react-hot-toast";
-
 export const useIntentExecutor = () => {
   const { cart, formData, addToCart, removeFromCart, clearCart, setFormData, placeOrder, addLog } = useAppStore();
   const router = useRouter();
@@ -102,7 +102,7 @@ export const useIntentExecutor = () => {
       } else if (errorMessage.includes("503") || errorMessage.includes("Service Unavailable")) {
         toast.error("The AI server is temporarily busy (503). Please try speaking again.");
       } else {
-        // toast.error("Could not process your request."); 
+        toast.error("Could not process your request."); 
       }
       
       return null;

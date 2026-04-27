@@ -71,7 +71,7 @@ export const fetchAIIntent = async (
     const systemInstruction = mode === 'ambient' ? AMBIENT_PROMPT : HELPING_PROMPT;
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
+      model: "gemini-flash-latest",
       systemInstruction: systemInstruction,
       generationConfig: {
         responseMimeType: "application/json",
@@ -96,7 +96,6 @@ export const fetchAIIntent = async (
     const status = error.status || "Unknown";
     const statusText = error.statusText || "Error";
     const msg = `[Gemini Error] ${status} - ${statusText}. Please try again.`
-    throw error
     return { 
       reply_message: msg, 
       intents: [] 
