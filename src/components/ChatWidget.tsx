@@ -13,9 +13,16 @@ export const ChatWidget = () => {
   const [inputText, setInputText] = useState("");
   const [mode, setMode] = useState<'ambient' | 'helping'>('helping'); // Default to Helping
   
-  const [messages, setMessages] = useState<Message[]>([
-    { role: "ai", text: "Hi! Try saying: 'Add burger to cart and checkout.'" }
-  ]);
+  const [messages, setMessages] = useState([
+  { 
+    role: "ai", 
+    text: "Hi! Try saying: 'Add burger to cart and checkout.'" 
+  },
+  { 
+    role: "system", 
+    text: "⚠️ NOTE: If you see a 503 error, please try again after 10 seconds. This is a rate-limit of the Gemini Free Tier and would not occur in a production environment."
+  }
+]);
   
   const { isListening, transcript, startListening, stopListening, flushBuffer } = useSpeechRecognition(mode);
   const { execute } = useIntentExecutor();
@@ -56,7 +63,10 @@ export const ChatWidget = () => {
     console.log("[HandleSend] Sending to LLM:", textToProcess);
     isProcessingRef.current = true; // Lock LLM requests
     
-    const currentHistory = messages.filter(m => m.text !== "Hi! Try saying: 'Add burger to cart and checkout.'");
+    const currentHistory = messages.filter(m => 
+  m.text !== "Hi! Try saying: 'Add burger to cart and checkout.'" && 
+  m.role !== "system"
+);
 
     // Add User message to chat
     setMessages(prev => [...prev, { role: "user", text: textToProcess }]);
